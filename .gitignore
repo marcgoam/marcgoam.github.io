@@ -1,5 +1,7 @@
 _site
 .sass-cache
 .jekyll-metadata
-_drafts
+_draft
+_sass
 .DS_Store
+README
