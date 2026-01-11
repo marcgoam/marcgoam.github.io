@@ -17,7 +17,7 @@ tags:
   -
 ---
 
-vamoo
+Esto es la prueba final :)
 Giddy from Hack the Box is being retired this week so I'll go over the steps to pwn this box. For this one we need to find an easy SQL injection point in the web application then leverage this to trigger an SMB connection back to our machine and use responder to capture some hashes. I learned a bit about Web powershell while doing this box as I didn't know that even existed.
 
 ![](/assets/images/htb-writeup-giddy/giddy_logo.png)
