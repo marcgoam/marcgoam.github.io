@@ -7,27 +7,47 @@ classes: wide
 author_profile: true
 ---
 
-## Hello! I'm BLY 👋
+## Bienvenido!👋
 
-Welcome to my **cybersecurity** and **ethical hacking** blog. I'm a pentester passionate about information security, CTFs, and vulnerability research.
+Bienvenido a mi blog de **ciberseguridad** y **hacking ético**. Soy un pentester apasionado por la ciberseguridad y los CTFs.
 
-## 🎯 About Me
+Mi nombre es **Marc González Amores**, y trabajo profesionalmente en seguridad ofensiva. Este blog sirve para compartir write-ups paso a paso de máquinas y retos de ciberseguridad, pero la verdadera acción está en la comunidad.
 
-My name is **Bertrand Lorente Yáñez** (BLY), and I work professionally in **penetration testing** and **cybersecurity**. My goal is to share knowledge about:
+## Únete a la Comunidad
 
-- **Penetration Testing** and security audits
-- **Bug Bounty** and vulnerability research
-- **CTF** (Capture The Flag) and challenge solving
-- **Security tool development**
-- **Malware analysis** and evasion techniques
+Si quieres resolver máquinas, aprender hacking ético y compartir conocimiento, este es tu lugar:
 
-## 🛠️ Experience and Certifications
+👉 [Únete a mi Discord](https://discord.gg/2UVck9kw)
 
-### Certifications
+Allí encontrarás:
+
+- Resolución conjunta de máquinas
+- Tips de pentesting y técnicas avanzadas
+- Debates y recursos prácticos
+- Gente con ganas de aprender hacking
+
+El blog documenta el contenido, el Discord es donde aprendemos juntos.
+
+## 🖥️ Lo que encontrarás aquí
+
+Write-ups de Hack The Box y VulnHub: pasos, técnicas y metodología
+
+CTF Challenges: resolución detallada
+
+Web & AD Pentesting: trucos y explotación real
+
+## 🛠️ Experiencia y certificaciones
+
+### Certificaciones
+
+- **CRTE** (Certified Red Team Expert)
+- **OSCP** (Offensive Security Certified Pentester)
 - **eCPPTv3** (eLearnSecurity Certified Professional Penetration Tester)
 - **eWPT** (eLearnSecurity Web Application Penetration Tester)
+- **eJPT** (eLearnSecurity Junior Penetration Tester)
 
-### Practice Platforms
+### Plataformas de práctica
+
 - **HackTheBox** - Machine and challenge solving
 - **PentesterLab** - Web pentesting laboratories
 - **TryHackMe** - Cybersecurity rooms
@@ -39,38 +59,3 @@ My name is **Bertrand Lorente Yáñez** (BLY), and I work professionally in **pe
 - **Mobile Application Pentesting** - iOS and Android security testing
 - **AI Pentesting** - AI systems and model security evaluation
 - **Infrastructure Pentesting** - Active Directory and Linux environments
-
-### Research & Development
-- **CVE Discovery** - I have discovered multiple CVEs
-- **Tool Development** - Creating tools like MCPwn
-- **Exploit Development**
-- **Security Research**
-
-## 🏆 Notable Achievements
-
-- **Multiple CVEs** discovered in web applications
-- **Critical vulnerabilities** reported in educational platforms
-- **Security tools** developed and published
-- **Technical articles** on advanced pentesting techniques
-
-## 📚 My Blog
-
-In this blog you'll find:
-
-### HackTheBox WriteUps
-Detailed solutions for HackTheBox machines with step-by-step explanations of the techniques used.
-
-### Vulnerability Research
-In-depth analysis of real vulnerabilities found in web applications and systems.
-
-### Tools and Techniques
-Tutorials on using pentesting tools and developing custom scripts.
-
-### CTF Challenges
-CTF challenge solutions with detailed technical explanations.
-
-## 🌐 Connect With Me
-
-- **GitHub**: [@bly-coder](https://github.com/bly-coder)
-- **LinkedIn**: [Bertrand Lorente Yáñez](https://linkedin.com/in/bertrand-lorente-yañez-887a8318a)
-- **Twitter**: [@bertrandlorente](https://twitter.com/bertrandlorente)
