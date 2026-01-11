@@ -1,0 +1,11 @@
+main:
+  - title: "Inicio"
+    url: /
+  # - title: "Publicaciones"
+  #  url: /publicaciones/
+  - title: "Categorias"
+    url: /categorias/
+  - title: "Buscador"
+    url: /buscador/
+  - title: "Sobre Mí"
+    url: /sobre-mi/
