@@ -1,7 +1,7 @@
-_site
+_site/
 .sass-cache
 .jekyll-metadata
 _draft
-_sass
+_sass/
 .DS_Store
-README
+README.md
