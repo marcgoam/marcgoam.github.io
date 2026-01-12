@@ -48,14 +48,7 @@ Web & AD Pentesting: trucos y explotación real
 
 ### Plataformas de práctica
 
-- **HackTheBox** - Machine and challenge solving
-- **PentesterLab** - Web pentesting laboratories
-- **TryHackMe** - Cybersecurity rooms
-- **VulnHub** - Vulnerable virtual machines
-
-## 🔍 Areas of Specialization
-
-- **Web Pentesting** - Web application security assessments
-- **Mobile Application Pentesting** - iOS and Android security testing
-- **AI Pentesting** - AI systems and model security evaluation
-- **Infrastructure Pentesting** - Active Directory and Linux environments
+- **HackTheBox**
+- **Proving Grounds**
+- **TryHackMe**
+- **VulnHub**
