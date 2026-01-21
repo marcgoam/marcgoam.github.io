@@ -5,7 +5,7 @@ excerpt: Busqueda es una máquina de dificultad fácil de Hack The Box donde se 
 date: 2025-02-06
 classes: wide
 header:
-  teaser: /assets/images/htb-writeup-administrator/administrator-logo.png
+  teaser: /assets/images/htb-writeup-busqueda/logo.png
   teaser_home_page: true
   icon: /assets/images/hackthebox.webp
 categories:
