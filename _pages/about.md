@@ -17,7 +17,7 @@ Mi nombre es **Marc González Amores**, y trabajo profesionalmente en seguridad 
 
 Si quieres resolver máquinas, aprender hacking ético y compartir conocimiento, este es tu lugar:
 
-👉 [Únete a mi Discord](https://discord.gg/2UVck9kw)
+👉 [Únete a mi Discord](https://discord.gg/722rZt8bEH)
 
 Allí encontrarás:
 
