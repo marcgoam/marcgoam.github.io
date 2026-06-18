@@ -40,6 +40,7 @@ Web & Active Directory pentesting: tricks and real-world exploitation
 
 ### Certifications
 
+- **CRTO** (Certified Red Team Operator)
 - **CRTE** (Certified Red Team Expert)
 - **OSCP** (Offensive Security Certified Pentester)
 - **eCPPTv3** (eLearnSecurity Certified Professional Penetration Tester)
