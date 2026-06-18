@@ -4,3 +4,5 @@ _site/
 _draft
 .DS_Store
 README.md
+.bundle/
+vendor/

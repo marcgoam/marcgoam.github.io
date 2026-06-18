@@ -1,44 +1,44 @@
 ---
 layout: single
-title: "Sobre Mí"
-permalink: /sobre-mi/
+title: "About Me"
+permalink: /about/
 date: 2026-01-08
 classes: wide
 author_profile: true
 ---
 
-## Bienvenido!👋
+## Welcome! 👋
 
-Bienvenido a mi blog de **ciberseguridad** y **hacking ético**. Soy un pentester apasionado por la ciberseguridad y los CTFs.
+Welcome to my **cybersecurity** and **ethical hacking** blog. I'm a pentester passionate about offensive security and CTFs.
 
-Mi nombre es **Marc González Amores**, y trabajo profesionalmente en seguridad ofensiva. Este blog sirve para compartir write-ups paso a paso de máquinas y retos de ciberseguridad, pero la verdadera acción está en la comunidad.
+My name is **Marc González Amores**, and I work professionally in offensive security. This blog is where I publish step-by-step write-ups of machines and security challenges, but the real action happens in the community.
 
-## Únete a la Comunidad
+## Join the Community
 
-Si quieres resolver máquinas, aprender hacking ético y compartir conocimiento, este es tu lugar:
+If you want to solve machines, learn ethical hacking and share knowledge, this is your place:
 
-👉 [Únete a mi Discord](https://discord.gg/722rZt8bEH)
+👉 [Join my Discord](https://discord.gg/722rZt8bEH)
 
-Allí encontrarás:
+There you'll find:
 
-- Resolución conjunta de máquinas
-- Tips de pentesting y técnicas avanzadas
-- Debates y recursos prácticos
-- Gente con ganas de aprender hacking
+- Group machine solving sessions
+- Pentesting tips and advanced techniques
+- Discussions and hands-on resources
+- People eager to learn hacking
 
-El blog documenta el contenido, el Discord es donde aprendemos juntos.
+The blog documents the content; the Discord is where we learn together.
 
-## 🖥️ Lo que encontrarás aquí
+## 🖥️ What you'll find here
 
-Write-ups de Hack The Box y VulnHub: pasos, técnicas y metodología
+Hack The Box and VulnHub write-ups: steps, techniques and methodology
 
-CTF Challenges: resolución detallada
+CTF challenges: detailed walkthroughs
 
-Web & AD Pentesting: trucos y explotación real
+Web & Active Directory pentesting: tricks and real-world exploitation
 
-## 🛠️ Experiencia y certificaciones
+## 🛠️ Experience and certifications
 
-### Certificaciones
+### Certifications
 
 - **CRTE** (Certified Red Team Expert)
 - **OSCP** (Offensive Security Certified Pentester)
@@ -46,7 +46,7 @@ Web & AD Pentesting: trucos y explotación real
 - **eWPT** (eLearnSecurity Web Application Penetration Tester)
 - **eJPT** (eLearnSecurity Junior Penetration Tester)
 
-### Plataformas de práctica
+### Practice platforms
 
 - **HackTheBox**
 - **Proving Grounds**

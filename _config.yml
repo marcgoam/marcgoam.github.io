@@ -15,13 +15,13 @@ remote_theme: "mmistakes/minimal-mistakes@4.15.1"
 minimal_mistakes_skin: "dark" #"haxor" # "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum", "sunrise"
 
 # Site Settings
-locale: "es-ES"
-lang: "es"
+locale: "en-US"
+lang: "en"
 favicon: "/assets/images/logo.ico"
 title: "marcgoam.io"
 title_separator: "-"
 name: "Marc"
-description: "Publicaciones sobre ciberseguridad, hacking y CTFs"
+description: "Publications about cybersecurity, hacking and CTFs"
 url: "https://marcgoam.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl: # the subpath of your site, e.g. "/blog"
 repository: "marcgoam/marcgoam.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
@@ -104,9 +104,9 @@ analytics:
 author:
   name: "marcgoam"
   avatar: "/assets/images/avatar.png"
-  bio: "Pentester, CTF player"
-  location: "España"
-  email: "marcgoam@gmail.com"
+  bio: "Pentester"
+  location: "Spain"
+  email: 
   uri: #
   home: # null (default), "absolute or relative url to link to author home"
   bitbucket:
