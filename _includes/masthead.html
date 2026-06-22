@@ -10,7 +10,7 @@
       <nav id="site-nav" class="greedy-nav">
         {% unless logo_path == empty %}
           <a class="site-logo" href="{{ '/' | relative_url }}"><img src="{{ logo_path | relative_url }}" alt=""></a>
-        {% endunless %}        
+        {% endunless %}
         <ul class="visible-links">
           {%- for link in site.data.navigation.main -%}
             {%- if link.url contains '://' -%}
@@ -18,8 +18,19 @@
             {%- else -%}
               {%- assign url = link.url | relative_url -%}
             {%- endif -%}
+
+            {%- comment -%} Active-page detection {%- endcomment -%}
+            {%- assign is_active = false -%}
+            {%- if link.url == '/' and page.url == '/' -%}
+              {%- assign is_active = true -%}
+            {%- elsif link.url != '/' and page.url contains link.url -%}
+              {%- assign is_active = true -%}
+            {%- endif -%}
+
             <li class="masthead__menu-item">
-              <a href="{{ url }}" {% if link.description %}title="{{ link.description }}"{% endif %}>{{ link.title }}</a>
+              <a href="{{ url }}"
+                 class="{% if is_active %}is-active{% endif %}"
+                 {% if link.description %}title="{{ link.description }}"{% endif %}>{{ link.title }}</a>
             </li>
           {%- endfor -%}
         </ul>

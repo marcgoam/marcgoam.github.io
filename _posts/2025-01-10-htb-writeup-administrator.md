@@ -1,5 +1,5 @@
 ---
-layout: single
+layout: post
 title: Administrator - Hack The Box
 excerpt: Write-up of Administrator, a medium-difficulty Windows machine centered on Active Directory abuse. Improper ACL permissions, credential reuse and Kerberoasting chain together into full domain compromise.
 date: 2024-11-13

@@ -1,0 +1,21 @@
+{% comment %}
+  GitBook-style collapsible sidebar for the notes collection.
+
+  - Folders and notes at the same level are merged and sorted by `order:`.
+  - A folder's `order` comes from its `index.md`'s front matter (default 9999).
+  - The folder's <summary> links to its index.md, so clicking the folder name
+    navigates to the section overview.
+  - Notes named `index.md` are hidden from the leaf list.
+{% endcomment %}
+
+<nav class="notes-nav">
+  {% include notes-tree.html prefix="" depth=1 %}
+</nav>
+
+<script>
+  // Prevent the folder <details> from toggling when the user clicks the
+  // folder name link — only the chevron area toggles, the text navigates.
+  document.querySelectorAll('.notes-nav__category-link').forEach(function (a) {
+    a.addEventListener('click', function (e) { e.stopPropagation(); });
+  });
+</script>

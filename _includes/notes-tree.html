@@ -1,0 +1,133 @@
+{% comment %}
+  Recursive renderer for one level of the notes tree.
+  Merges notes and subfolders at this level, sorted by `order:`.
+
+  A subfolder's order comes from its `index.md`'s front matter (default 9999).
+  `index.md` itself is hidden from the leaf list — the folder's summary links to it.
+
+  Args:
+    prefix : path under _notes/ for this level, with trailing slash. "" for root.
+    depth  : 1-based nesting level (controls --nested class).
+
+  IMPORTANT: Jekyll `{% include %}` shares scope with the caller. To survive
+  recursion, the render loop reads include.prefix / include.depth directly
+  (which are invocation-local) instead of caching them in `assign` variables
+  (which get clobbered by the recursive call).
+{% endcomment %}
+
+{% assign _prefix = include.prefix %}
+{% if _prefix == nil %}{% assign _prefix = "" %}{% endif %}
+{% assign _prefix_size = _prefix | size %}
+
+{% assign items = "" | split: "" %}
+{% assign seen_folders = "" | split: "" %}
+
+{% comment %} --- Pass 1: collect leaf notes and discover subfolders --- {% endcomment %}
+{% for n in site.notes %}
+  {% assign rel = n.path | remove_first: "_notes/" %}
+
+  {% assign in_scope = false %}
+  {% assign tail = "" %}
+  {% if _prefix == "" %}
+    {% assign in_scope = true %}
+    {% assign tail = rel %}
+  {% else %}
+    {% assign head = rel | slice: 0, _prefix_size %}
+    {% if head == _prefix %}
+      {% assign in_scope = true %}
+      {% assign tail = rel | remove_first: _prefix %}
+    {% endif %}
+  {% endif %}
+  {% if in_scope %}
+    {% assign parts = tail | split: "/" %}
+    {% if parts.size == 1 %}
+      {% assign basename = parts[0] | replace: ".md", "" | replace: ".markdown", "" %}
+      {% if basename != "index" %}
+        {% assign ord = n.order | default: 9999 %}
+        {% capture ord_pad %}00000{{ ord }}{% endcapture %}
+        {% assign ord_pad = ord_pad | slice: -5, 5 %}
+        {% assign title = n.title | default: n.slug %}
+        {% capture _entry %}{{ ord_pad }}~~{{ title }}~~note~~{{ n.url }}~~{{ title }}{% endcapture %}
+        {% assign items = items | push: _entry %}
+      {% endif %}
+    {% else %}
+      {% assign fname = parts[0] %}
+      {% unless seen_folders contains fname %}
+        {% assign seen_folders = seen_folders | push: fname %}
+      {% endunless %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{% comment %} --- Pass 2: resolve each subfolder's order via its index.md --- {% endcomment %}
+{% for fname in seen_folders %}
+  {% assign expected_index = _prefix | append: fname | append: "/index.md" %}
+  {% assign folder_order = 9999 %}
+  {% assign folder_index_url = "" %}
+  {% assign folder_label = fname | replace: "-", " " | replace: "_", " " | capitalize %}
+
+  {% for n in site.notes %}
+    {% assign rel = n.path | remove_first: "_notes/" %}
+    {% if rel == expected_index %}
+      {% assign folder_order = n.order | default: 9999 %}
+      {% assign folder_index_url = n.url %}
+      {% if n.title %}{% assign folder_label = n.title %}{% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% capture ord_pad %}00000{{ folder_order }}{% endcapture %}
+  {% assign ord_pad = ord_pad | slice: -5, 5 %}
+  {% capture _entry %}{{ ord_pad }}~~{{ folder_label }}~~folder~~{{ fname }}~~{{ folder_label }}~~{{ folder_index_url }}{% endcapture %}
+  {% assign items = items | push: _entry %}
+{% endfor %}
+
+{% assign items_sorted = items | sort %}
+
+<ul class="notes-nav__sublist notes-nav__sublist--depth-{{ include.depth | default: 1 }}">
+  {% for item in items_sorted %}
+    {% assign p = item | split: "~~" %}
+    {% if p[2] == "note" %}
+      {% if p[3] == page.url %}{% assign active = "is-active" %}{% else %}{% assign active = "" %}{% endif %}
+      <li><a href="{{ p[3] | relative_url }}" class="notes-nav__link {{ active }}">{{ p[4] }}</a></li>
+    {% else %}
+      {% comment %}
+        Use include.prefix and include.depth (invocation-scoped) directly here.
+        Local `assign` aliases would be clobbered by the recursive include call.
+      {% endcomment %}
+      {% capture sub_prefix %}{{ include.prefix }}{{ p[3] }}/{% endcapture %}
+      {% assign current_depth = include.depth | default: 1 %}
+      {% assign next_depth = current_depth | plus: 1 %}
+
+      {% assign is_open = false %}
+      {% assign summary_active = "" %}
+      {% if page.url contains "/notes/" %}
+        {% assign page_rel = page.url | remove_first: "/notes/" %}
+        {% assign sp_size = sub_prefix | size %}
+        {% assign actual_head = page_rel | slice: 0, sp_size %}
+        {% if actual_head == sub_prefix %}
+          {% assign is_open = true %}
+        {% endif %}
+        {% if p[5] != "" and p[5] == page.url %}
+          {% assign is_open = true %}
+          {% assign summary_active = "is-active" %}
+        {% endif %}
+      {% endif %}
+
+      {% assign nested_class = "" %}
+      {% if current_depth > 1 %}{% assign nested_class = "notes-nav__group--nested" %}{% endif %}
+
+      <li>
+        <details class="notes-nav__group {{ nested_class }}"{% if is_open %} open{% endif %}>
+          <summary class="notes-nav__category {% if current_depth > 1 %}notes-nav__category--nested{% endif %}">
+            {% if p[5] != "" %}
+              <a href="{{ p[5] | relative_url }}" class="notes-nav__category-link {{ summary_active }}">{{ p[4] }}</a>
+            {% else %}
+              <span class="notes-nav__category-text">{{ p[4] }}</span>
+            {% endif %}
+          </summary>
+          {% include notes-tree.html prefix=sub_prefix depth=next_depth %}
+        </details>
+      </li>
+    {% endif %}
+  {% endfor %}
+</ul>

@@ -1,0 +1,176 @@
+---
+layout: default
+---
+
+{% if site.breadcrumbs %}
+  <nav class="breadcrumbs">
+    <ol itemscope itemtype="https://schema.org/BreadcrumbList">
+      <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a href="{{ '/' | relative_url }}" itemprop="item"><span itemprop="name">Home</span></a>
+        <meta itemprop="position" content="1" />
+      </li>
+      <span class="sep">/</span>
+      {% if page.url == "/notes/" %}
+        <li class="current">Notes</li>
+      {% else %}
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <a href="{{ '/notes/' | relative_url }}" itemprop="item"><span itemprop="name">Notes</span></a>
+          <meta itemprop="position" content="2" />
+        </li>
+        <span class="sep">/</span>
+        {% assign rel = page.url | remove_first: "/notes/" %}
+        {% assign crumbs = rel | split: "/" %}
+        {% assign cum_path = "" %}
+        {% for crumb in crumbs %}
+          {% unless forloop.last %}
+            {% assign cum_path = cum_path | append: crumb | append: "/" %}
+            {% assign crumb_url = "/notes/" | append: cum_path %}
+
+            {% comment %} Prefer the title from the folder's index.md if present {% endcomment %}
+            {% assign label = crumb | replace: "-", " " | replace: "_", " " | capitalize %}
+            {% for n in site.notes %}
+              {% if n.url == crumb_url and n.title %}
+                {% assign label = n.title %}
+              {% endif %}
+            {% endfor %}
+
+            <li class="breadcrumb__folder"><a href="{{ crumb_url | relative_url }}">{{ label }}</a></li>
+            <span class="sep">/</span>
+          {% else %}
+            <li class="current">{{ page.title }}</li>
+          {% endunless %}
+        {% endfor %}
+      {% endif %}
+    </ol>
+  </nav>
+{% endif %}
+
+<div id="main" class="layout--note__main" role="main">
+  <aside class="notes-left">
+    {% include notes-sidebar.html %}
+  </aside>
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    {% if page.title %}<meta itemprop="headline" content="{{ page.title | markdownify | strip_html | strip_newlines | escape_once }}">{% endif %}
+    {% if page.excerpt %}<meta itemprop="description" content="{{ page.excerpt | markdownify | strip_html | strip_newlines | escape_once }}">{% endif %}
+    {% if page.last_modified_at %}<meta itemprop="dateModified" content="{{ page.last_modified_at | date: "%B %d, %Y" }}">{% endif %}
+
+    <div class="page__inner-wrap">
+      <header>
+        {% if page.title %}<h1 id="page-title" class="page__title" itemprop="headline">{{ page.title | markdownify | remove: "<p>" | remove: "</p>" }}</h1>{% endif %}
+      </header>
+
+      <section class="page__content" itemprop="text">
+        {{ content }}
+      </section>
+
+      <footer class="page__meta">
+        {% if page.last_modified_at %}
+          <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Updated:</strong> <time datetime="{{ page.last_modified_at | date: "%Y-%m-%d" }}">{{ page.last_modified_at | date: "%B %d, %Y" }}</time></p>
+        {% elsif page.date %}
+          <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Published:</strong> <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %d, %Y" }}</time></p>
+        {% endif %}
+      </footer>
+    </div>
+  </article>
+
+  {% if page.toc %}
+    <aside class="notes-right">
+      <nav class="toc">
+        <header><h4 class="nav__title"><i class="fas fa-{{ page.toc_icon | default: 'file-alt' }}"></i> {{ page.toc_label | default: 'On this page' }}</h4></header>
+        {% include toc.html sanitize=true html=content h_min=1 h_max=6 class="toc__menu" %}
+      </nav>
+    </aside>
+  {% endif %}
+</div>
+
+{% if page.toc %}
+<script>
+// Per-frame scrollspy for the notes TOC. The theme's built-in scrollspy is
+// throttled to 250ms, which feels laggy when expanding/collapsing nested
+// items. This runs on rAF and re-applies .active AFTER the theme handler in
+// the same scroll event, eliminating the delay.
+(function () {
+  var tocRoot = document.querySelector('.notes-right .toc__menu');
+  if (!tocRoot) return;
+
+  var items = [];
+  tocRoot.querySelectorAll('a[href^="#"]').forEach(function (link) {
+    var target = document.querySelector(link.getAttribute('href'));
+    if (target) items.push({ link: link, target: target });
+  });
+  if (!items.length) return;
+
+  var pending = false;
+  var locked = false;
+  var unlockTimer = null;
+
+  function setActiveChain(link) {
+    items.forEach(function (it) { it.link.classList.remove('active'); });
+    var li = link.closest('li');
+    while (li) {
+      var a = li.querySelector(':scope > a');
+      if (a) a.classList.add('active');
+      var p = li.parentElement;
+      li = p ? p.closest('li') : null;
+    }
+  }
+
+  function update() {
+    pending = false;
+    if (locked) return;
+    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    var probe = scrollTop + 21;
+    var ranked = items.map(function (it) {
+      return { link: it.link, top: it.target.getBoundingClientRect().top + window.pageYOffset };
+    }).sort(function (a, b) { return a.top - b.top; });
+
+    // At the bottom of the page the last section's top can sit beyond the
+    // max scrollable position, so probe never reaches it. Pin the last item.
+    if (scrollTop + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+      setActiveChain(ranked[ranked.length - 1].link);
+      return;
+    }
+
+    for (var i = 0; i < ranked.length; i++) {
+      var top = ranked[i].top;
+      var bottom = i < ranked.length - 1 ? ranked[i + 1].top : Infinity;
+      if (top <= probe && probe < bottom) {
+        setActiveChain(ranked[i].link);
+        return;
+      }
+    }
+  }
+
+  function scheduleUnlock() {
+    clearTimeout(unlockTimer);
+    unlockTimer = setTimeout(function () {
+      locked = false;
+      if (!pending) { pending = true; requestAnimationFrame(update); }
+    }, 150);
+  }
+
+  function onScroll() {
+    if (locked) { scheduleUnlock(); return; }
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(update);
+  }
+
+  // On TOC click: pin the destination immediately and ignore scroll-driven
+  // updates until the smooth-scroll finishes — otherwise every section the
+  // animation passes through would flash as active.
+  items.forEach(function (it) {
+    it.link.addEventListener('click', function () {
+      setActiveChain(it.link);
+      locked = true;
+      scheduleUnlock();
+    });
+  });
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  update();
+})();
+</script>
+{% endif %}

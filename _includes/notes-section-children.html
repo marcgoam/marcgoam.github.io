@@ -1,0 +1,123 @@
+{% comment %}
+  Renders an indexed list of the immediate children of the current page's
+  section. Drop this into a notes `index.md`:
+
+      {% include notes-section-children.html %}
+
+  Lists notes and subfolders, merged and sorted by `order:` (identical rules
+  to the sidebar). For subfolders, the entry links to the folder's index.md
+  if one exists; otherwise the folder is shown but inert.
+{% endcomment %}
+
+{% assign section_path = page.url | remove_first: "/notes/" %}
+{% if section_path == "/" or section_path == "" %}{% assign section_path = "" %}{% endif %}
+{% assign section_size = section_path | size %}
+
+{% assign items = "" | split: "" %}
+{% assign seen_folders = "" | split: "" %}
+
+{% for n in site.notes %}
+  {% assign rel = n.path | remove_first: "_notes/" %}
+
+  {% assign in_scope = false %}
+  {% if section_path == "" %}
+    {% assign in_scope = true %}
+    {% assign tail = rel %}
+  {% else %}
+    {% assign head = rel | slice: 0, section_size %}
+    {% if head == section_path %}
+      {% assign in_scope = true %}
+      {% assign tail = rel | remove_first: section_path %}
+    {% endif %}
+  {% endif %}
+
+  {% if in_scope %}
+    {% assign parts = tail | split: "/" %}
+    {% if parts.size == 1 %}
+      {% assign basename = parts[0] | replace: ".md", "" | replace: ".markdown", "" %}
+      {% if basename != "index" %}
+        {% assign ord = n.order | default: 9999 %}
+        {% capture ord_pad %}00000{{ ord }}{% endcapture %}
+        {% assign ord_pad = ord_pad | slice: -5, 5 %}
+        {% assign title = n.title | default: n.slug %}
+        {% if n.description %}
+          {% assign blurb = n.description | strip_html | strip_newlines | truncate: 160 %}
+        {% else %}
+          {% assign blurb = n.excerpt | default: "" | strip_html | strip_newlines | truncate: 160 %}
+        {% endif %}
+        {% capture _entry %}{{ ord_pad }}~~{{ title }}~~note~~{{ n.url }}~~{{ title }}~~{{ blurb }}{% endcapture %}
+        {% assign items = items | push: _entry %}
+      {% endif %}
+    {% else %}
+      {% assign fname = parts[0] %}
+      {% unless seen_folders contains fname %}
+        {% assign seen_folders = seen_folders | push: fname %}
+      {% endunless %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{% for fname in seen_folders %}
+  {% assign expected_index = section_path | append: fname | append: "/index.md" %}
+  {% assign folder_order = 9999 %}
+  {% assign folder_index_url = "" %}
+  {% assign folder_label = fname | replace: "-", " " | replace: "_", " " | capitalize %}
+  {% assign folder_excerpt = "" %}
+  {% assign child_count = 0 %}
+
+  {% for n in site.notes %}
+    {% assign rel = n.path | remove_first: "_notes/" %}
+    {% if rel == expected_index %}
+      {% assign folder_order = n.order | default: 9999 %}
+      {% assign folder_index_url = n.url %}
+      {% if n.title %}{% assign folder_label = n.title %}{% endif %}
+      {% if n.description %}
+        {% assign folder_excerpt = n.description | strip_html | strip_newlines | truncate: 160 %}
+      {% else %}
+        {% assign folder_excerpt = n.excerpt | default: "" | strip_html | strip_newlines | truncate: 160 %}
+      {% endif %}
+    {% endif %}
+    {% assign folder_path = section_path | append: fname | append: "/" %}
+    {% assign folder_path_size = folder_path | size %}
+    {% assign rel_head = rel | slice: 0, folder_path_size %}
+    {% if rel_head == folder_path %}
+      {% assign rel_tail = rel | remove_first: folder_path %}
+      {% assign rel_basename = rel_tail | replace: ".md", "" | replace: ".markdown", "" %}
+      {% unless rel_tail contains "/" or rel_basename == "index" %}
+        {% assign child_count = child_count | plus: 1 %}
+      {% endunless %}
+    {% endif %}
+  {% endfor %}
+
+  {% capture ord_pad %}00000{{ folder_order }}{% endcapture %}
+  {% assign ord_pad = ord_pad | slice: -5, 5 %}
+  {% capture _entry %}{{ ord_pad }}~~{{ folder_label }}~~folder~~{{ folder_index_url }}~~{{ folder_label }}~~{{ folder_excerpt }}~~{{ child_count }}{% endcapture %}
+  {% assign items = items | push: _entry %}
+{% endfor %}
+
+{% assign items_sorted = items | sort %}
+
+<ul class="notes-section-children">
+  {% for item in items_sorted %}
+    {% assign p = item | split: "~~" %}
+    <li class="notes-section-children__item notes-section-children__item--{{ p[2] }}">
+      {% if p[2] == "note" %}
+        <a href="{{ p[3] | relative_url }}" class="notes-section-children__link">
+          <span class="notes-section-children__title">{{ p[4] }}</span>
+          {% if p[5] != "" %}<span class="notes-section-children__excerpt">{{ p[5] }}</span>{% endif %}
+        </a>
+      {% else %}
+        {% if p[3] != "" %}
+          <a href="{{ p[3] | relative_url }}" class="notes-section-children__link">
+            <span class="notes-section-children__title">{{ p[4] }}</span>
+            {% if p[5] != "" %}<span class="notes-section-children__excerpt">{{ p[5] }}</span>{% endif %}
+          </a>
+        {% else %}
+          <span class="notes-section-children__link notes-section-children__link--inert">
+            <span class="notes-section-children__title">{{ p[4] }}</span>
+          </span>
+        {% endif %}
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

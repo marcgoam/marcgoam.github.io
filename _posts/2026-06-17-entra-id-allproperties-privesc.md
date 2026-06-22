@@ -1,5 +1,5 @@
 ---
-layout: single
+layout: post
 title: Entra ID privilege escalation via applications.myOrganization/allProperties/update
 excerpt: Walkthrough of a privilege escalation in Microsoft Entra ID that abuses the seemingly scoped permission `microsoft.directory/applications.myOrganization/ allProperties/update`. A victim with a single custom-role action injects a client secret into a single-tenant application that already holds `RoleManagement.ReadWrite.Directory`, signs in as the service principal and assigns itself Global Administrator.
 date: 2026-06-18

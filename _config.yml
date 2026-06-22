@@ -200,6 +200,12 @@ paginate: 10 # amount of posts to show
 paginate_path: /page:num/
 timezone: # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
+# Collections
+collections:
+  notes:
+    output: true
+    permalink: /notes/:path/
+
 # Plugins (previously gems:)
 plugins:
   - jekyll-paginate
@@ -259,9 +265,24 @@ defaults:
       path: ""
       type: posts
     values:
-      layout: single
-      author_profile: true
+      layout: post
+      author_profile: false
       read_time: false
       comments: false
       share: false
       related: true
+      toc: true
+      toc_sticky: true
+  # _notes
+  - scope:
+      path: ""
+      type: notes
+    values:
+      layout: note
+      author_profile: false
+      read_time: false
+      comments: false
+      share: false
+      toc: true
+      toc_sticky: true
+      order: 9999  # default — notes without an explicit `order:` sort to the bottom

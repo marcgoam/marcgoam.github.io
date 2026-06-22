@@ -1,5 +1,5 @@
 ---
-layout: single
+layout: post
 title: Busqueda - Hack The Box
 excerpt: Busqueda is an easy Hack The Box machine where initial access is obtained through arbitrary code execution in a vulnerable web application. Privilege escalation is achieved by accessing Gitea, analyzing the source of a script executable as root and abusing file permissions to set bash with the SUID bit.
 date: 2025-02-06
